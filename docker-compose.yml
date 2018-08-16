@@ -1,0 +1,27 @@
+version: '3'
+services:
+  db:
+    image: "mdillon/postgis"
+    environment:
+      POSTGRES_PASSWORD: db_pwd
+    ports:
+      - "5432:5432"
+  web:
+    build:
+      context: .
+    environment:
+      DMIS_DB: "postgresql://postgres:db_pwd@db/dmis"
+      DMIS_SECRET: "ertyihjrk294978979"
+      DMIS_ENV: Dev
+    volumes:
+      - ./:/src/:cached
+    ports:
+      - "8000:8000"
+    links:
+      - db
+  node:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    volumes:
+      - ./:/src/:cached

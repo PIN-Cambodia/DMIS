@@ -3,37 +3,27 @@ Disaster Management Information Service
 
 ## Getting Started
 
-The DMIS application is split into a client and server structure.  The client can be run independently of the server code to make front-end development easier.
+The DMIS application is split into a client and server structure.  The client can be run independently of the server code to make front-end development easier. The docker-compose setup is however made based on running both client and server from the same progress.
 
-### Dependencies
+# Getting up and running for development
 
-#### Python 3.6
+As mentioned above, the project is based on docker compose, which should be able to run straight away by just using `docker-compose up`. The first time you run the project, you will need to do a few things to initiate the database and users:
 
-You need to have Python 3.6 installed in your development environment.  [Python 3 install instructions are here](https://thinkwhere.atlassian.net/wiki/display/DEV/HOWTO+-+Install+Python+3+on+Windows)
+## Database setup
 
-#### NodeJS
+    docker-compose exec db psql -U postgres -c 'CREATE DATABASE dmis'
+    docker-compose exec web bash -c 'python manage.py db upgrade'
 
-You must have nodejs installed to develop and run the app, locally.  [Get install from here](https://nodejs.org/en/)
+## Create admin user account
 
-Verify that you are running at least node 6.9.x and npm 3.x.x by running node -v and npm -v in a terminal/console window. Older versions produce errors, but newer versions are fine.
+    docker-compose exec web bash -c 'python manage.py create_admin -u admin -p admin1234'
 
-### Getting Started with Server Development
+## Generate the static pages for client side
 
-All server development is done with Python
+Note that you can do this on your own computer as well in case you don't wish to do it in the docker `node` container. All you have to do is install node 8.10, and angular cli (which provides the `ng` commandline tool), as well as run the commands from below in the `src/client` folder
 
-#### Environment vars:
-To avoid saving credentials in the repository, the following environment variables must be set up locally or on the 
-deployment environment:
-* **DMIS_DB** - This is for the PostGIS connection string.  This will be in the format: postgresql://username:pwd@host/dbname
-* **DMIS_SECRET** - This is a secret key
-* **DMIS_ENV** - Deployment environment. [Prod | Staging | Dev]
-* **EN_ACCESS_KEY** - AWS Access Key used to access EarthNetworks data stored in S3
-* **EN_SECRET_KEY** - AWS Access Secret used to access EarthNetworks data stored in S3
-
-* Linux / Mac
-    * ```export DMIS_ENV=Dev```
-* Windows
-    * ```setx DMIS_ENV "Dev"```
+    docker-compose run --rm node bash -c 'npm install --include-dev'
+    docker-compose run --rm node bash -c 'ng build --aot --prod -op ../server/web/static/dist/en'
 
 ### DB migrations
 We use [Flask-Migrate](https://flask-migrate.readthedocs.io/en/latest/) to create the database from the migrations directory. Create the database as follows:
@@ -43,25 +33,13 @@ python manage.py db upgrade
 ```
 
 Create migration scripts when DB models have been updated as follows:
-``` 
+```
 python manage.py db migrate
 ```
 
+## Running client locally
 
-#### Set-up development environment
-To develop on the application:
-
-* Clone the repo and ```cd``` into the dmis-app directory
-* Enter the following to create a [Virtual Environment](https://docs.python.org/3/library/venv.html#venv-def) to install the app dependencies into
-    * ```pyvenv venv``` or
-    * ```"C:\Program Files\Python36\python" -m venv .\venv``` (on Windows if command above does not work, or add to windows path)
-* Once the venv directory has been created, you need to activate the Virtual Environment, as follows:
-    * ```.\venv\scripts\activate```
-* **LINUX ONLY** - To install on Linux use pip to install all dependencies
-    * ```pip install -r requirements.txt```
-* 
-    
-#### Running locally
+If you want to just run the client side, with no server, you can do the following:
 
 * Before running you'll need to create a distribution of the client code, that we'll use Flask to serve.  This is done via Angular CLI from the client directory:
     * ```cd client```
@@ -111,12 +89,3 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 ### Testing the app
 
 TODO
-
-## Dev Ops
-
-The DMIS app is deployed to AWS within a Docker container.  It is possible to run and test the app locally within a docker container, as follows: 
-
-* Build a new version of the container as follows:
-    *  ```docker build -t dmis .```
-* Run the container, as follows:
-    * ```docker run -d -p 8080:8000 dmis```
